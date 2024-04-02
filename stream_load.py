@@ -57,6 +57,8 @@ def stream_read_load():
 def insert_into_table(lines, header):
     sql = """INSERT INTO %s (%s) VALUES %s """ % (mysql_table, header, lines)
 
+    global num_inserts
+
     print("insert number: ", num_inserts)
 
     num_inserts += 1
