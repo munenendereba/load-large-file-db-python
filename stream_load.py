@@ -12,6 +12,7 @@ mysql_table = "vehicles"
 mysql_user = os.getenv("DB_USER")
 mysql_password = os.getenv("DB_PASSWORD")
 filename = os.getenv("FILE_NAME")
+num_inserts = 1
 
 
 def db_connect():
@@ -37,23 +38,36 @@ def stream_read_load():
         header = "`" + file.readline().replace("\n", "").replace(",", "`,`") + "`"
         print(header)
         next(file)
+        lines = ""
+        num = 0
         for line in file:
-            line = "'" + line.replace(",", "','") + "'"
-            insert_into_table(line, header)
+            line = '("' + line.replace(",", '","') + '")'
+
+            lines += line + ","
+            num += 1
+            if num >= 50000:
+                lines = lines.rstrip(",")
+                insert_into_table(lines, header)
+                num = 0
+                lines = ""
 
         print("insert completed")
 
 
-def insert_into_table(line, header):
-    sql = """INSERT INTO %s (%s) VALUES(%s)""" % (mysql_table, header, line)
+def insert_into_table(lines, header):
+    sql = """INSERT INTO %s (%s) VALUES %s """ % (mysql_table, header, lines)
 
-    print("the statement: ", sql)
+    print("insert number: ", num_inserts)
+
+    num_inserts += 1
 
     try:
         with db_connect() as db:
             cursor = db.cursor()
 
             cursor.execute(sql)
+
+            db.commit()
 
     except Exception as e:
         print("error occurred inserting", e)
