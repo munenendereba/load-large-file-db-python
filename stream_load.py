@@ -1,21 +1,26 @@
-from dotenv import load_dotenv
+"""
+this module simulates reading a large file 
+and then parsing it line by line and inserting it into db
+"""
+
 import os
+from dotenv import load_dotenv
 import mysql.connector as mysql
 
 load_dotenv()
 
-header = os.getenv("FILE_HEADER")
+
 mysql_host = os.getenv("DB_HOST")
 mysql_port = os.getenv("DB_PORT")
 mysql_db = os.getenv("DB_NAME")
-mysql_table = "vehicles"
+MYSQL_TABLE = "vehicles"
 mysql_user = os.getenv("DB_USER")
 mysql_password = os.getenv("DB_PASSWORD")
 filename = os.getenv("FILE_NAME")
-num_inserts = 1
 
 
 def db_connect():
+    """method to connect to db"""
     try:
         db = mysql.connect(
             host=mysql_host,
@@ -29,13 +34,19 @@ def db_connect():
         print("connected to db")
 
         return db
-    except Exception as e:
+    except mysql.Error() as e:
         print("an error occurred", e)
+
+        return None
 
 
 def stream_read_load():
-    with open(filename, "r") as file:
+    """open the file, read it, loop the lines and insert into db"""
+
+    with open(filename, "r", encoding="UTF-8") as file:
         header = "`" + file.readline().replace("\n", "").replace(",", "`,`") + "`"
+
+        num_inserts = 1
         print(header)
         next(file)
         lines = ""
@@ -51,17 +62,18 @@ def stream_read_load():
                 num = 0
                 lines = ""
 
-        print("insert completed")
+                print("batch: ", num_inserts)
+
+                num_inserts += 1
+
+        print("processing complete")
 
 
 def insert_into_table(lines, header):
-    sql = """INSERT INTO %s (%s) VALUES %s """ % (mysql_table, header, lines)
-
-    global num_inserts
-
-    print("insert number: ", num_inserts)
-
-    num_inserts += 1
+    """takes in lines and header
+    returns nothing
+    """
+    sql = f"""INSERT INTO {MYSQL_TABLE} ({header}) VALUES {lines} """
 
     try:
         with db_connect() as db:
@@ -71,7 +83,7 @@ def insert_into_table(lines, header):
 
             db.commit()
 
-    except Exception as e:
+    except mysql.Error() as e:
         print("error occurred inserting", e)
 
 
