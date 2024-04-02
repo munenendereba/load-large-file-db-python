@@ -1,5 +1,5 @@
 """
-this module simulates reading a large file 
+this module simulates reading a large file
 and then parsing it line by line and inserting it into db
 """
 
@@ -44,7 +44,8 @@ def stream_read_load():
     """open the file, read it, loop the lines and insert into db"""
 
     with open(filename, "r", encoding="UTF-8") as file:
-        header = "`" + file.readline().replace("\n", "").replace(",", "`,`") + "`"
+        header = file.readline().replace("\n", "").replace(",", "`,`")
+        header = "`" + header + "`"
 
         num_inserts = 1
         print(header)
